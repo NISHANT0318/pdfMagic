@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Convert Files - PDF to Images & Images to PDF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-exchange-alt text-purple me-3"></i>
+                    Convert Files
+                </h1>
+                <p class="lead text-muted">Convert PDF to images or images to PDF with quality control</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Conversion Options -->
+            <div class="row g-4">
+                <!-- PDF to Images -->
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                PDF to Images
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="pdfToImagesForm" enctype="multipart/form-data">
+                                <!-- File Upload -->
+                                <div class="mb-3">
+                                    <label for="pdfFile" class="form-label">Select PDF File</label>
+                                    <div class="file-drop-zone" id="pdfDropZone">
+                                        <div class="text-center">
+                                            <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                            <p class="mb-1">Drop PDF here</p>
+                                            <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quality Slider -->
+                                <div class="mb-3">
+                                    <label for="pdfQuality" class="form-label">
+                                        Image Quality: <span id="pdfQualityValue">95</span>%
+                                    </label>
+                                    <input type="range" class="form-range" id="pdfQuality" name="quality" 
+                                           min="50" max="100" value="95">
+                                    <div class="form-text">Higher quality = larger file size</div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary" id="pdfSubmitBtn">
+                                        <i class="fas fa-exchange-alt me-2"></i>
+                                        Convert to Images
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Progress Bar -->
+                            <div class="progress mt-3 d-none" id="pdfProgressContainer">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+
+                            <!-- Result Area -->
+                            <div id="pdfResultArea" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images to PDF -->
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-images me-2"></i>
+                                Images to PDF
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="imagesToPdfForm" enctype="multipart/form-data">
+                                <!-- File Upload -->
+                                <div class="mb-3">
+                                    <label for="imageFiles" class="form-label">Select Image Files</label>
+                                    <div class="file-drop-zone" id="imageDropZone">
+                                        <div class="text-center">
+                                            <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                            <p class="mb-1">Drop images here</p>
+                                            <input type="file" class="form-control" id="imageFiles" name="files" 
+                                                   accept=".jpg,.jpeg,.png" multiple required>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- File List -->
+                                <div id="imageFileList" class="mb-3"></div>
+
+                                <!-- Quality Slider -->
+                                <div class="mb-3">
+                                    <label for="imageQuality" class="form-label">
+                                        PDF Quality: <span id="imageQualityValue">95</span>%
+                                    </label>
+                                    <input type="range" class="form-range" id="imageQuality" name="quality" 
+                                           min="50" max="100" value="95">
+                                    <div class="form-text">Higher quality = larger file size</div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success" id="imageSubmitBtn" disabled>
+                                        <i class="fas fa-exchange-alt me-2"></i>
+                                        Convert to PDF
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Progress Bar -->
+                            <div class="progress mt-3 d-none" id="imageProgressContainer">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+
+                            <!-- Result Area -->
+                            <div id="imageResultArea" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Conversion Instructions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>PDF to Images:</h6>
+                            <ul class="mb-3">
+                                <li>Upload a PDF file</li>
+                                <li>Adjust image quality (50-100%)</li>
+                                <li>Each page becomes a separate JPEG image</li>
+                                <li>Download as ZIP file if multiple pages</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Images to PDF:</h6>
+                            <ul class="mb-3">
+                                <li>Upload multiple image files (JPG, PNG)</li>
+                                <li>Adjust PDF quality (50-100%)</li>
+                                <li>Images are combined into a single PDF</li>
+                                <li>Order matters - arrange files as needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> For best results, use images with similar dimensions and orientations.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // PDF to Images Form
+    const pdfForm = document.getElementById('pdfToImagesForm');
+    const pdfFileInput = document.getElementById('pdfFile');
+    const pdfDropZone = document.getElementById('pdfDropZone');
+    const pdfQualitySlider = document.getElementById('pdfQuality');
+    const pdfQualityValue = document.getElementById('pdfQualityValue');
+    const pdfProgressContainer = document.getElementById('pdfProgressContainer');
+    const pdfProgressBar = pdfProgressContainer.querySelector('.progress-bar');
+    const pdfResultArea = document.getElementById('pdfResultArea');
+    const pdfSubmitBtn = document.getElementById('pdfSubmitBtn');
+
+    // Images to PDF Form
+    const imageForm = document.getElementById('imagesToPdfForm');
+    const imageFileInput = document.getElementById('imageFiles');
+    const imageDropZone = document.getElementById('imageDropZone');
+    const imageFileList = document.getElementById('imageFileList');
+    const imageQualitySlider = document.getElementById('imageQuality');
+    const imageQualityValue = document.getElementById('imageQualityValue');
+    const imageProgressContainer = document.getElementById('imageProgressContainer');
+    const imageProgressBar = imageProgressContainer.querySelector('.progress-bar');
+    const imageResultArea = document.getElementById('imageResultArea');
+    const imageSubmitBtn = document.getElementById('imageSubmitBtn');
+
+    let selectedImages = [];
+
+    // File drop functionality
+    setupFileDropZone(pdfDropZone, pdfFileInput);
+    setupFileDropZone(imageDropZone, imageFileInput, true);
+
+    // Quality sliders
+    pdfQualitySlider.addEventListener('input', function() {
+        pdfQualityValue.textContent = this.value;
+    });
+
+    imageQualitySlider.addEventListener('input', function() {
+        imageQualityValue.textContent = this.value;
+    });
+
+    // Image file selection
+    imageFileInput.addEventListener('change', function() {
+        selectedImages = Array.from(this.files);
+        updateImageFileList();
+        updateImageSubmitButton();
+    });
+
+    function updateImageFileList() {
+        if (selectedImages.length === 0) {
+            imageFileList.innerHTML = '';
+            return;
+        }
+
+        imageFileList.innerHTML = `
+            <div class="border rounded p-2">
+                <small class="text-muted d-block mb-2">Selected Images (${selectedImages.length})</small>
+                ${selectedImages.map((file, index) => `
+                    <div class="d-flex align-items-center justify-content-between py-1" data-index="${index}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-image text-success me-2"></i>
+                            <small>${file.name}</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-image" 
+                                data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // Add remove functionality
+        imageFileList.querySelectorAll('.remove-image').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                selectedImages.splice(index, 1);
+                updateImageFileList();
+                updateImageSubmitButton();
+            });
+        });
+    }
+
+    function updateImageSubmitButton() {
+        imageSubmitBtn.disabled = selectedImages.length === 0;
+    }
+
+    // PDF to Images Form Submission
+    pdfForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!pdfFileInput.files[0]) {
+            showAlert(pdfResultArea, 'Please select a PDF file', 'danger');
+            return;
+        }
+
+        // Create FormData with file and quality explicitly
+        const formData = new FormData();
+        formData.append('file', pdfFileInput.files[0]);
+        formData.append('quality', pdfQualitySlider.value);
+        
+        submitConversion('/api/convert-pdf-to-images', formData, pdfSubmitBtn, pdfProgressContainer, pdfProgressBar, pdfResultArea);
+    });
+
+    // Images to PDF Form Submission
+    imageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (selectedImages.length === 0) {
+            showAlert(imageResultArea, 'Please select at least one image file', 'danger');
+            return;
+        }
+
+        const formData = new FormData();
+        selectedImages.forEach(file => {
+            formData.append('files', file);
+        });
+        formData.append('quality', imageQualitySlider.value);
+
+        submitConversion('/api/convert-images-to-pdf', formData, imageSubmitBtn, imageProgressContainer, imageProgressBar, imageResultArea);
+    });
+
+    function submitConversion(url, formData, submitBtn, progressContainer, progressBar, resultArea) {
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 20;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 300);
+
+        // Submit form
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(resultArea, data.filename, data.is_zip);
+                } else {
+                    showAlert(resultArea, data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+                if (submitBtn === imageSubmitBtn) {
+                    updateImageSubmitButton();
+                }
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert(resultArea, 'An error occurred while processing the files', 'danger');
+            submitBtn.disabled = false;
+            if (submitBtn === imageSubmitBtn) {
+                updateImageSubmitButton();
+            }
+        });
+    }
+
+    function showDownloadResult(resultArea, filename, isZip) {
+        const fileType = isZip ? 'ZIP archive' : (filename.endsWith('.pdf') ? 'PDF file' : 'file');
+        const icon = isZip ? 'fa-file-archive' : (filename.endsWith('.pdf') ? 'fa-file-pdf' : 'fa-file');
+        
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h6><i class="fas fa-check-circle me-2"></i>Conversion Successful!</h6>
+                <p class="mb-2 small">Your ${fileType} is ready for download.</p>
+                <a href="/download/${filename}" class="btn btn-success btn-sm">
+                    <i class="fas ${icon} me-1"></i>Download
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(resultArea, message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <small><i class="fas fa-exclamation-triangle me-1"></i>${message}</small>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Merge PDFs - Combine Multiple PDF Files{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-layer-group text-primary me-3"></i>
+                    Merge PDFs
+                </h1>
+                <p class="lead text-muted">Combine multiple PDF files into a single document</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="mergeForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFiles" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF Files (minimum 2)
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF files here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFiles" name="files" 
+                                           accept=".pdf" multiple required style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary mt-2" onclick="document.getElementById('pdfFiles').click();">
+                                        Browse Files
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File List -->
+                        <div id="fileList" class="mb-4"></div>
+                        
+                        <!-- Clear Files Button -->
+                        <div class="mb-3" id="clearButtonContainer" style="display: none;">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearAllFiles">
+                                <i class="fas fa-trash me-1"></i>Clear All Files
+                            </button>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                                <i class="fas fa-layer-group me-2"></i>
+                                Merge PDFs
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Merge PDFs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Select multiple PDF files (minimum 2 files required)</li>
+                        <li>Arrange the files in the desired order using drag and drop</li>
+                        <li>Click "Merge PDFs" to combine them into a single document</li>
+                        <li>Download your merged PDF file</li>
+                    </ol>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Tip:</strong> The files will be merged in the order they appear in the list.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="ad-space bg-secondary text-center py-4 rounded sticky-top">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">300x250 Medium Rectangle</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('mergeForm');
+    const fileInput = document.getElementById('pdfFiles');
+    const dropZone = document.getElementById('fileDropZone');
+    const fileList = document.getElementById('fileList');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let selectedFiles = [];
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput, true);
+    
+    // Clear all files functionality
+    document.getElementById('clearAllFiles').addEventListener('click', function() {
+        selectedFiles = [];
+        const dt = new DataTransfer();
+        fileInput.files = dt.files;
+        updateFileList();
+        updateSubmitButton();
+        
+        // Reset drop zone display
+        const textCenter = dropZone.querySelector('.text-center');
+        if (textCenter) {
+            textCenter.innerHTML = `
+                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                <p class="mb-2">Drag and drop your PDF files here</p>
+                <p class="text-muted">or</p>
+            `;
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', handleFileSelection);
+
+    function handleFileSelection() {
+        const newFiles = Array.from(fileInput.files);
+        
+        // Add new files to existing ones (avoid duplicates)
+        newFiles.forEach(newFile => {
+            const isDuplicate = selectedFiles.some(existingFile => 
+                existingFile.name === newFile.name && 
+                existingFile.size === newFile.size &&
+                existingFile.lastModified === newFile.lastModified
+            );
+            
+            if (!isDuplicate) {
+                selectedFiles.push(newFile);
+            }
+        });
+        
+        updateFileList();
+        updateSubmitButton();
+    }
+
+    function updateFileList() {
+        if (selectedFiles.length === 0) {
+            fileList.innerHTML = '';
+            return;
+        }
+
+        fileList.innerHTML = `
+            <div class="border rounded p-3">
+                <h6 class="mb-3">Selected Files (${selectedFiles.length})</h6>
+                <div id="sortableFileList">
+                    ${selectedFiles.map((file, index) => `
+                        <div class="file-item d-flex align-items-center justify-content-between p-2 border rounded mb-2" 
+                             data-index="${index}">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-grip-vertical text-muted me-2" style="cursor: move;"></i>
+                                <i class="fas fa-file-pdf text-danger me-2"></i>
+                                <span>${file.name}</span>
+                                <small class="text-muted ms-2">(${formatFileSize(file.size)})</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-file" 
+                                    data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+                <small class="text-muted">Drag files to reorder them</small>
+            </div>
+        `;
+
+        // Add remove functionality
+        fileList.querySelectorAll('.remove-file').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = parseInt(this.dataset.index);
+                selectedFiles.splice(index, 1);
+                
+                // Update the file input to reflect current selected files
+                const dt = new DataTransfer();
+                selectedFiles.forEach(file => dt.items.add(file));
+                fileInput.files = dt.files;
+                
+                updateFileList();
+                updateSubmitButton();
+            });
+        });
+
+        // Add sortable functionality (basic)
+        makeSortable(document.getElementById('sortableFileList'));
+    }
+
+    function makeSortable(container) {
+        let draggedElement = null;
+
+        container.addEventListener('dragstart', function(e) {
+            if (e.target.classList.contains('file-item')) {
+                draggedElement = e.target;
+                e.target.style.opacity = '0.5';
+            }
+        });
+
+        container.addEventListener('dragend', function(e) {
+            if (e.target.classList.contains('file-item')) {
+                e.target.style.opacity = '';
+                draggedElement = null;
+            }
+        });
+
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        container.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (draggedElement && e.target.closest('.file-item') && e.target.closest('.file-item') !== draggedElement) {
+                const dropTarget = e.target.closest('.file-item');
+                const draggedIndex = parseInt(draggedElement.dataset.index);
+                const targetIndex = parseInt(dropTarget.dataset.index);
+
+                // Reorder files array
+                const draggedFile = selectedFiles[draggedIndex];
+                selectedFiles.splice(draggedIndex, 1);
+                selectedFiles.splice(targetIndex, 0, draggedFile);
+
+                // Update the file input to reflect new order
+                const dt = new DataTransfer();
+                selectedFiles.forEach(file => dt.items.add(file));
+                fileInput.files = dt.files;
+
+                updateFileList();
+            }
+        });
+
+        // Make file items draggable
+        container.querySelectorAll('.file-item').forEach(item => {
+            item.draggable = true;
+        });
+    }
+
+    function updateSubmitButton() {
+        submitBtn.disabled = selectedFiles.length < 2;
+        const clearButtonContainer = document.getElementById('clearButtonContainer');
+        clearButtonContainer.style.display = selectedFiles.length > 0 ? 'block' : 'none';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (selectedFiles.length < 2) {
+            showAlert('Please select at least 2 PDF files', 'danger');
+            return;
+        }
+
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 20;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 300);
+
+        // Submit form
+        fetch('/api/merge-pdfs', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(data.filename);
+                } else {
+                    showAlert(data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+                updateSubmitButton();
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the files', 'danger');
+            submitBtn.disabled = false;
+            updateSubmitButton();
+        });
+    });
+
+    function showDownloadResult(filename) {
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDFs Merged Successfully!</h5>
+                <p class="mb-3">Your PDF files have been merged into a single document.</p>
+                <a href="/download/${filename}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download Merged PDF
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

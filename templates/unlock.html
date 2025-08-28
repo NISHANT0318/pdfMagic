@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Unlock PDF - Remove Password Protection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-unlock text-success me-3"></i>
+                    Unlock PDF
+                </h1>
+                <p class="lead text-muted">Remove password protection from your PDF files securely</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="unlockForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF File
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF file here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PDF Status -->
+                        <div id="pdfStatus" class="mb-4" style="display: none;"></div>
+
+                        <!-- Password Input -->
+                        <div class="mb-4" id="passwordContainer" style="display: none;">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-key me-2"></i>PDF Password
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="Enter the current PDF password">
+                            <div class="form-text">Enter the password used to protect this PDF file</div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                                <i class="fas fa-unlock me-2"></i>
+                                Unlock PDF
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Unlock a PDF
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Select or drag and drop your PDF file</li>
+                        <li>The system will automatically check if the PDF is password protected</li>
+                        <li>If password protected, enter the current password</li>
+                        <li>If not protected, you can download it directly</li>
+                        <li>For protected files, click "Unlock PDF" to remove the password protection</li>
+                        <li>Download your PDF file</li>
+                    </ol>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Security Note:</strong> Your files are processed securely and automatically deleted after processing.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="ad-space bg-secondary text-center py-4 rounded sticky-top">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">300x250 Medium Rectangle</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('unlockForm');
+    const fileInput = document.getElementById('pdfFile');
+    const dropZone = document.getElementById('fileDropZone');
+    const pdfStatus = document.getElementById('pdfStatus');
+    const passwordContainer = document.getElementById('passwordContainer');
+    const passwordInput = document.getElementById('password');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let currentPdfData = null;
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput);
+
+    // File input change - check PDF encryption status
+    fileInput.addEventListener('change', function() {
+        if (this.files[0]) {
+            checkPdfEncryption(this.files[0]);
+        } else {
+            resetForm();
+        }
+    });
+
+    function checkPdfEncryption(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // Show checking status
+        pdfStatus.style.display = 'block';
+        pdfStatus.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-spinner fa-spin me-2"></i>
+                Checking PDF status...
+            </div>
+        `;
+        passwordContainer.style.display = 'none';
+        submitBtn.style.display = 'none';
+
+        fetch('/api/check-pdf-encryption', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentPdfData = data;
+                if (data.is_encrypted) {
+                    // PDF is password protected
+                    pdfStatus.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-lock me-2"></i>
+                            <strong>Password Protected PDF Detected</strong>
+                            <p class="mb-0 mt-2">This PDF is password protected. Please enter the password to unlock it.</p>
+                        </div>
+                    `;
+                    passwordContainer.style.display = 'block';
+                    passwordInput.required = true;
+                    submitBtn.innerHTML = '<i class="fas fa-unlock me-2"></i>Unlock PDF';
+                    submitBtn.style.display = 'block';
+                    passwordInput.focus();
+                } else {
+                    // PDF is not encrypted
+                    pdfStatus.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>PDF Ready for Download</strong>
+                            <p class="mb-0 mt-2">This PDF is not password protected. You can download it directly.</p>
+                        </div>
+                    `;
+                    passwordContainer.style.display = 'none';
+                    passwordInput.required = false;
+                    submitBtn.innerHTML = '<i class="fas fa-download me-2"></i>Download PDF';
+                    submitBtn.style.display = 'block';
+                }
+            } else {
+                showStatusError(data.error || 'Failed to check PDF status');
+            }
+        })
+        .catch(error => {
+            showStatusError('An error occurred while checking the PDF');
+        });
+    }
+
+    function showStatusError(message) {
+        pdfStatus.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+        passwordContainer.style.display = 'none';
+        submitBtn.style.display = 'none';
+    }
+
+    function resetForm() {
+        pdfStatus.style.display = 'none';
+        passwordContainer.style.display = 'none';
+        submitBtn.style.display = 'block';
+        submitBtn.innerHTML = '<i class="fas fa-unlock me-2"></i>Unlock PDF';
+        passwordInput.required = true;
+        passwordInput.value = '';
+        currentPdfData = null;
+        resultArea.innerHTML = '';
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            showAlert('Please select a PDF file', 'danger');
+            return;
+        }
+
+        if (!currentPdfData) {
+            showAlert('Please wait for PDF analysis to complete', 'warning');
+            return;
+        }
+
+        // If PDF is not encrypted, create a simple download
+        if (!currentPdfData.is_encrypted) {
+            const file = fileInput.files[0];
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showAlert('PDF downloaded successfully!', 'success');
+            return;
+        }
+
+        // For encrypted PDFs, proceed with unlocking
+        if (!passwordInput.value.trim()) {
+            showAlert('Please enter the PDF password', 'danger');
+            passwordInput.focus();
+            return;
+        }
+
+        // Create FormData with the file and password explicitly
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('password', passwordInput.value);
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 200);
+
+        // Submit form
+        fetch('/api/unlock-pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(data.filename);
+                } else {
+                    showAlert(data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the file', 'danger');
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showDownloadResult(filename) {
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDF Unlocked Successfully!</h5>
+                <p class="mb-3">Your PDF has been unlocked and is ready for download.</p>
+                <a href="/download/${filename}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download Unlocked PDF
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

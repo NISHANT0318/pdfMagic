@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Compress PDF - Reduce PDF File Size{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-compress-alt text-success me-3"></i>
+                    Compress PDF
+                </h1>
+                <p class="lead text-muted">Reduce PDF file size while maintaining document quality</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="compressForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF File
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF file here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Info -->
+                        <div id="fileInfo" class="mb-4" style="display: none;">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong id="fileName"></strong>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-primary" id="fileSize"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compression Settings -->
+                        <div class="mb-4">
+                            <label for="compressionLevel" class="form-label">
+                                <i class="fas fa-sliders-h me-2"></i>
+                                Compression Level: <span id="compressionValue">50</span>%
+                            </label>
+                            <input type="range" class="form-range" id="compressionLevel" name="quality" 
+                                   min="10" max="90" value="50">
+                            <div class="row mt-2">
+                                <div class="col text-start">
+                                    <small class="text-muted">Maximum Compression</small>
+                                </div>
+                                <div class="col text-center">
+                                    <small class="text-muted">Balanced</small>
+                                </div>
+                                <div class="col text-end">
+                                    <small class="text-muted">Best Quality</small>
+                                </div>
+                            </div>
+                            <div class="form-text mt-2">
+                                Lower values = smaller file size but reduced quality. Higher values = better quality but larger file size.
+                            </div>
+                        </div>
+
+                        <!-- Compression Preview -->
+                        <div class="mb-4">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="compression-preview text-center p-3 border rounded">
+                                        <i class="fas fa-chart-line text-info fa-2x mb-2"></i>
+                                        <h6>Estimated Reduction</h6>
+                                        <span class="badge bg-info" id="estimatedReduction">30-50%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="compression-preview text-center p-3 border rounded">
+                                        <i class="fas fa-image text-warning fa-2x mb-2"></i>
+                                        <h6>Quality Level</h6>
+                                        <span class="badge bg-warning" id="qualityLevel">Medium</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="compression-preview text-center p-3 border rounded">
+                                        <i class="fas fa-clock text-secondary fa-2x mb-2"></i>
+                                        <h6>Processing Time</h6>
+                                        <span class="badge bg-secondary" id="processingTime">~30s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                                <i class="fas fa-compress-alt me-2"></i>
+                                Compress PDF
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How PDF Compression Works
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Compression Levels:</h6>
+                            <ul class="mb-3">
+                                <li><strong>Maximum (10-30%):</strong> Smallest file size, noticeable quality reduction</li>
+                                <li><strong>Balanced (40-60%):</strong> Good balance between size and quality</li>
+                                <li><strong>Best Quality (70-90%):</strong> Minimal quality loss, moderate compression</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Best Practices:</h6>
+                            <ul class="mb-3">
+                                <li>Test different levels to find optimal balance</li>
+                                <li>Use maximum compression for internal documents</li>
+                                <li>Use best quality for important presentations</li>
+                                <li>Large files benefit more from compression</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        <strong>Safe & Secure:</strong> Your original PDF structure and content remain intact during compression.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="sticky-top">
+                <div class="ad-space bg-secondary text-center py-4 rounded mb-3">
+                    <p class="text-muted mb-0">Advertisement Space</p>
+                    <small class="text-muted">300x250 Medium Rectangle</small>
+                </div>
+                
+                <!-- Compression Tips -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Compression Tips
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Larger PDFs see better compression ratios</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Image-heavy PDFs compress more effectively</small>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Text-only PDFs may see minimal reduction</small>
+                            </li>
+                            <li>
+                                <i class="fas fa-check text-success me-2"></i>
+                                <small>Always keep a backup of important documents</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('compressForm');
+    const fileInput = document.getElementById('pdfFile');
+    const dropZone = document.getElementById('fileDropZone');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const compressionSlider = document.getElementById('compressionLevel');
+    const compressionValue = document.getElementById('compressionValue');
+    const estimatedReduction = document.getElementById('estimatedReduction');
+    const qualityLevel = document.getElementById('qualityLevel');
+    const processingTime = document.getElementById('processingTime');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput);
+
+    // File input change
+    fileInput.addEventListener('change', function() {
+        if (this.files[0]) {
+            const file = this.files[0];
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            updateCompressionPreview();
+        } else {
+            fileInfo.style.display = 'none';
+        }
+    });
+
+    // Compression slider
+    compressionSlider.addEventListener('input', function() {
+        compressionValue.textContent = this.value;
+        updateCompressionPreview();
+    });
+
+    function updateCompressionPreview() {
+        const level = parseInt(compressionSlider.value);
+        
+        // Update estimated reduction
+        if (level <= 30) {
+            estimatedReduction.textContent = '50-70%';
+            estimatedReduction.className = 'badge bg-success';
+        } else if (level <= 60) {
+            estimatedReduction.textContent = '30-50%';
+            estimatedReduction.className = 'badge bg-info';
+        } else {
+            estimatedReduction.textContent = '10-30%';
+            estimatedReduction.className = 'badge bg-warning';
+        }
+        
+        // Update quality level
+        if (level <= 30) {
+            qualityLevel.textContent = 'Basic';
+            qualityLevel.className = 'badge bg-warning';
+        } else if (level <= 60) {
+            qualityLevel.textContent = 'Good';
+            qualityLevel.className = 'badge bg-info';
+        } else {
+            qualityLevel.textContent = 'High';
+            qualityLevel.className = 'badge bg-success';
+        }
+        
+        // Update processing time
+        if (level <= 30) {
+            processingTime.textContent = '~45s';
+        } else if (level <= 60) {
+            processingTime.textContent = '~30s';
+        } else {
+            processingTime.textContent = '~20s';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            showAlert('Please select a PDF file', 'danger');
+            return;
+        }
+
+        // Create FormData with file and compression level explicitly
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('compression_level', compressionSlider.value);
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress based on compression level
+        const compressionLevel = parseInt(compressionSlider.value);
+        const baseTime = compressionLevel <= 30 ? 4500 : compressionLevel <= 60 ? 3000 : 2000;
+        const steps = 20;
+        const interval = baseTime / steps;
+        
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += (100 / steps) + Math.random() * 10;
+            if (progress > 95) progress = 95;
+            progressBar.style.width = progress + '%';
+        }, interval);
+
+        // Submit form
+        fetch('/api/compress-pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showCompressionResult(data.filename);
+                } else {
+                    showAlert(data.error || 'An error occurred during compression', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the file', 'danger');
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showCompressionResult(filename) {
+        const originalSize = fileInput.files[0].size;
+        const compressionLevel = parseInt(compressionSlider.value);
+        const estimatedSavings = compressionLevel <= 30 ? '50-70%' : compressionLevel <= 60 ? '30-50%' : '10-30%';
+        
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDF Compressed Successfully!</h5>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Original Size:</strong> ${formatFileSize(originalSize)}</p>
+                        <p class="mb-2"><strong>Estimated Savings:</strong> ${estimatedSavings}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-2"><strong>Compression Level:</strong> ${compressionSlider.value}%</p>
+                        <p class="mb-2"><strong>Quality:</strong> ${qualityLevel.textContent}</p>
+                    </div>
+                </div>
+                <div class="d-grid mt-3">
+                    <a href="/download/${filename}" class="btn btn-success btn-lg">
+                        <i class="fas fa-download me-2"></i>Download Compressed PDF
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+
+    // Initialize compression preview
+    updateCompressionPreview();
+});
+</script>
+{% endblock %}

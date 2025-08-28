@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Protect PDF - Add Password Protection{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-lock text-warning me-3"></i>
+                    Protect PDF
+                </h1>
+                <p class="lead text-muted">Add password protection to secure your PDF files</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="protectForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF File
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF file here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Input -->
+                        <div class="mb-4">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-key me-2"></i>New Password
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="Enter a strong password" required minlength="4">
+                            <div class="form-text">Choose a strong password to protect your PDF file</div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="form-label">
+                                <i class="fas fa-key me-2"></i>Confirm Password
+                            </label>
+                            <input type="password" class="form-control" id="confirmPassword" 
+                                   placeholder="Confirm your password" required minlength="4">
+                            <div class="invalid-feedback" id="passwordMismatch">
+                                Passwords do not match
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-warning btn-lg" id="submitBtn">
+                                <i class="fas fa-lock me-2"></i>
+                                Protect PDF
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Protect a PDF
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Select or drag and drop your PDF file</li>
+                        <li>Enter a strong password (minimum 4 characters)</li>
+                        <li>Confirm your password</li>
+                        <li>Click "Protect PDF" to add password protection</li>
+                        <li>Download your protected PDF file</li>
+                    </ol>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Remember your password! If you lose it, you won't be able to access the PDF.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="ad-space bg-secondary text-center py-4 rounded sticky-top">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">300x250 Medium Rectangle</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('protectForm');
+    const fileInput = document.getElementById('pdfFile');
+    const dropZone = document.getElementById('fileDropZone');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput);
+
+    // Password validation
+    confirmPasswordInput.addEventListener('input', validatePasswords);
+    passwordInput.addEventListener('input', validatePasswords);
+
+    function validatePasswords() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        if (confirmPassword && password !== confirmPassword) {
+            confirmPasswordInput.classList.add('is-invalid');
+        } else {
+            confirmPasswordInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        if (!fileInput.files[0]) {
+            showAlert('Please select a PDF file', 'danger');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showAlert('Passwords do not match', 'danger');
+            return;
+        }
+
+        if (password.length < 4) {
+            showAlert('Password must be at least 4 characters long', 'danger');
+            return;
+        }
+
+        // Create FormData with file and password explicitly
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('password', password);
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 200);
+
+        // Submit form
+        fetch('/api/protect-pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(data.filename);
+                } else {
+                    showAlert(data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the file', 'danger');
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showDownloadResult(filename) {
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDF Protected Successfully!</h5>
+                <p class="mb-3">Your PDF has been password protected and is ready for download.</p>
+                <a href="/download/${filename}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download Protected PDF
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

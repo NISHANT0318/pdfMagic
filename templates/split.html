@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Split PDF - Extract Pages from PDF{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-cut text-danger me-3"></i>
+                    Split PDF
+                </h1>
+                <p class="lead text-muted">Extract specific pages or split PDF into separate files</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="splitForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF File
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF file here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Split Options -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-scissors me-2"></i>Split Options
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="split_type" 
+                                               id="splitAll" value="all" checked>
+                                        <label class="form-check-label" for="splitAll">
+                                            Split into individual pages
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="split_type" 
+                                               id="splitRange" value="range">
+                                        <label class="form-check-label" for="splitRange">
+                                            Extract specific pages
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page Range Input -->
+                        <div class="mb-4" id="pageRangeContainer" style="display: none;">
+                            <label for="pageRange" class="form-label">
+                                <i class="fas fa-list-ol me-2"></i>Page Range
+                            </label>
+                            <input type="text" class="form-control" id="pageRange" name="page_range" 
+                                   placeholder="e.g., 1-5 or 3 or 1,3,5-7">
+                            <div class="form-text">
+                                Examples: "1-5" (pages 1 to 5), "3" (page 3 only), "1,3,5-7" (pages 1, 3, and 5 to 7)
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg" id="submitBtn">
+                                <i class="fas fa-cut me-2"></i>
+                                Split PDF
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Split a PDF
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Split Options:</h6>
+                    <ul class="mb-3">
+                        <li><strong>Split into individual pages:</strong> Creates separate PDF files for each page</li>
+                        <li><strong>Extract specific pages:</strong> Extract only the pages you specify</li>
+                    </ul>
+                    
+                    <h6>Page Range Examples:</h6>
+                    <ul class="mb-0">
+                        <li><code>1-5</code> - Extract pages 1 through 5</li>
+                        <li><code>3</code> - Extract only page 3</li>
+                        <li><code>1,3,5-7</code> - Extract pages 1, 3, and 5 through 7</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Note:</strong> If multiple files are created, they will be packaged in a ZIP file for download.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="ad-space bg-secondary text-center py-4 rounded sticky-top">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">300x250 Medium Rectangle</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('splitForm');
+    const fileInput = document.getElementById('pdfFile');
+    const dropZone = document.getElementById('fileDropZone');
+    const splitAllRadio = document.getElementById('splitAll');
+    const splitRangeRadio = document.getElementById('splitRange');
+    const pageRangeContainer = document.getElementById('pageRangeContainer');
+    const pageRangeInput = document.getElementById('pageRange');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput);
+
+    // Split option change
+    splitAllRadio.addEventListener('change', togglePageRange);
+    splitRangeRadio.addEventListener('change', togglePageRange);
+
+    function togglePageRange() {
+        if (splitRangeRadio.checked) {
+            pageRangeContainer.style.display = 'block';
+            pageRangeInput.required = true;
+        } else {
+            pageRangeContainer.style.display = 'none';
+            pageRangeInput.required = false;
+        }
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            showAlert('Please select a PDF file', 'danger');
+            return;
+        }
+
+        if (splitRangeRadio.checked && !pageRangeInput.value.trim()) {
+            showAlert('Please specify a page range', 'danger');
+            return;
+        }
+
+        // Create FormData with file and split options explicitly
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('split_type', splitAllRadio.checked ? 'all' : 'range');
+        if (splitRangeRadio.checked) {
+            formData.append('page_range', pageRangeInput.value);
+        }
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 25;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 250);
+
+        // Submit form
+        fetch('/api/split-pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(data.filename, data.is_zip);
+                } else {
+                    showAlert(data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the file', 'danger');
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showDownloadResult(filename, isZip) {
+        const fileType = isZip ? 'ZIP archive' : 'PDF file';
+        const icon = isZip ? 'fa-file-archive' : 'fa-file-pdf';
+        
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDF Split Successfully!</h5>
+                <p class="mb-3">Your PDF has been split and the ${fileType} is ready for download.</p>
+                <a href="/download/${filename}" class="btn btn-success">
+                    <i class="fas ${icon} me-2"></i>Download ${isZip ? 'ZIP File' : 'PDF File'}
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

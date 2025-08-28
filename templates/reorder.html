@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Reorder PDF Pages - Rearrange PDF Pages{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">
+                    <i class="fas fa-sort text-info me-3"></i>
+                    Reorder PDF Pages
+                </h1>
+                <p class="lead text-muted">Rearrange PDF pages in any order you want</p>
+            </div>
+
+            <!-- Ad Space -->
+            <div class="ad-space bg-secondary text-center py-3 rounded mb-4">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">728x90 Banner Ad</small>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="reorderForm" enctype="multipart/form-data">
+                        <!-- File Upload -->
+                        <div class="mb-4">
+                            <label for="pdfFile" class="form-label">
+                                <i class="fas fa-file-pdf me-2"></i>Select PDF File
+                            </label>
+                            <div class="file-drop-zone" id="fileDropZone">
+                                <div class="text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2">Drag and drop your PDF file here</p>
+                                    <p class="text-muted">or</p>
+                                    <input type="file" class="form-control" id="pdfFile" name="file" accept=".pdf" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Page Order Input -->
+                        <div class="mb-4">
+                            <label for="pageOrder" class="form-label">
+                                <i class="fas fa-list-ol me-2"></i>New Page Order
+                            </label>
+                            <input type="text" class="form-control" id="pageOrder" name="page_order" 
+                                   placeholder="e.g., 3,1,2,4,5" required>
+                            <div class="form-text">
+                                Enter page numbers separated by commas in the desired order (e.g., "3,1,2,4,5" to move page 3 to the beginning)
+                            </div>
+                        </div>
+
+                        <!-- Quick Reorder Options -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-magic me-2"></i>Quick Reorder Options
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-2" 
+                                            id="reverseOrder">
+                                        <i class="fas fa-exchange-alt me-1"></i>Reverse Order
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-2" 
+                                            id="shuffleOrder">
+                                        <i class="fas fa-random me-1"></i>Shuffle Pages
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-info btn-lg" id="submitBtn">
+                                <i class="fas fa-sort me-2"></i>
+                                Reorder PDF
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Progress Bar -->
+                    <div class="progress mt-3 d-none" id="progressContainer">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Reorder PDF Pages
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-3">
+                        <li>Upload your PDF file</li>
+                        <li>Specify the new page order using comma-separated page numbers</li>
+                        <li>Use quick options for common reordering tasks</li>
+                        <li>Click "Reorder PDF" to apply the changes</li>
+                        <li>Download your reordered PDF</li>
+                    </ol>
+                    
+                    <h6>Examples:</h6>
+                    <ul class="mb-3">
+                        <li><code>3,1,2,4,5</code> - Move page 3 to the beginning</li>
+                        <li><code>2,1,3,4,5</code> - Swap first two pages</li>
+                        <li><code>5,4,3,2,1</code> - Reverse all pages</li>
+                    </ul>
+
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> Make sure to include all page numbers. Missing pages will be excluded from the output.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Ad -->
+        <div class="col-lg-4">
+            <div class="ad-space bg-secondary text-center py-4 rounded sticky-top">
+                <p class="text-muted mb-0">Advertisement Space</p>
+                <small class="text-muted">300x250 Medium Rectangle</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reorderForm');
+    const fileInput = document.getElementById('pdfFile');
+    const dropZone = document.getElementById('fileDropZone');
+    const pageOrderInput = document.getElementById('pageOrder');
+    const reverseOrderBtn = document.getElementById('reverseOrder');
+    const shuffleOrderBtn = document.getElementById('shuffleOrder');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const resultArea = document.getElementById('resultArea');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let pdfPageCount = 0;
+
+    // File drop functionality
+    setupFileDropZone(dropZone, fileInput);
+
+    // File input change to get page count (simplified - in real app would need PDF parsing)
+    fileInput.addEventListener('change', function() {
+        if (this.files[0]) {
+            // For demo purposes, assume 5 pages. In real implementation, 
+            // you'd need to parse the PDF to get actual page count
+            pdfPageCount = 5; // This would be determined by parsing the PDF
+            updateQuickOrderButtons();
+        }
+    });
+
+    function updateQuickOrderButtons() {
+        if (pdfPageCount > 0) {
+            reverseOrderBtn.disabled = false;
+            shuffleOrderBtn.disabled = false;
+        }
+    }
+
+    // Quick reorder options
+    reverseOrderBtn.addEventListener('click', function() {
+        if (pdfPageCount > 0) {
+            const reversedOrder = [];
+            for (let i = pdfPageCount; i >= 1; i--) {
+                reversedOrder.push(i);
+            }
+            pageOrderInput.value = reversedOrder.join(',');
+        } else {
+            // Default reverse for unknown page count
+            const currentOrder = pageOrderInput.value.trim();
+            if (currentOrder) {
+                const pages = currentOrder.split(',').map(p => p.trim());
+                pageOrderInput.value = pages.reverse().join(',');
+            }
+        }
+    });
+
+    shuffleOrderBtn.addEventListener('click', function() {
+        if (pdfPageCount > 0) {
+            const pages = [];
+            for (let i = 1; i <= pdfPageCount; i++) {
+                pages.push(i);
+            }
+            // Fisher-Yates shuffle
+            for (let i = pages.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pages[i], pages[j]] = [pages[j], pages[i]];
+            }
+            pageOrderInput.value = pages.join(',');
+        } else {
+            showAlert('Please upload a PDF file first to determine page count', 'warning');
+        }
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            showAlert('Please select a PDF file', 'danger');
+            return;
+        }
+
+        const pageOrder = pageOrderInput.value.trim();
+        if (!pageOrder) {
+            showAlert('Please specify the page order', 'danger');
+            return;
+        }
+
+        // Validate page order format
+        const pageNumbers = pageOrder.split(',').map(p => p.trim());
+        const isValid = pageNumbers.every(p => /^\d+$/.test(p) && parseInt(p) > 0);
+        
+        if (!isValid) {
+            showAlert('Invalid page order format. Please use comma-separated page numbers (e.g., 1,3,2)', 'danger');
+            return;
+        }
+
+        // Create FormData with file and page order explicitly
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('page_order', pageOrderInput.value);
+
+        // Show progress
+        submitBtn.disabled = true;
+        progressContainer.classList.remove('d-none');
+        progressBar.style.width = '0%';
+        resultArea.innerHTML = '';
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress > 90) progress = 90;
+            progressBar.style.width = progress + '%';
+        }, 200);
+
+        // Submit form
+        fetch('/api/reorder-pdf', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(progressInterval);
+            progressBar.style.width = '100%';
+            
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+                
+                if (data.success) {
+                    showDownloadResult(data.filename);
+                } else {
+                    showAlert(data.error || 'An error occurred', 'danger');
+                }
+                
+                submitBtn.disabled = false;
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            progressContainer.classList.add('d-none');
+            showAlert('An error occurred while processing the file', 'danger');
+            submitBtn.disabled = false;
+        });
+    });
+
+    function showDownloadResult(filename) {
+        resultArea.innerHTML = `
+            <div class="alert alert-success">
+                <h5><i class="fas fa-check-circle me-2"></i>PDF Pages Reordered Successfully!</h5>
+                <p class="mb-3">Your PDF pages have been rearranged in the specified order.</p>
+                <a href="/download/${filename}" class="btn btn-success">
+                    <i class="fas fa-download me-2"></i>Download Reordered PDF
+                </a>
+            </div>
+        `;
+    }
+
+    function showAlert(message, type) {
+        resultArea.innerHTML = `
+            <div class="alert alert-${type}">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+
+    // Initially disable quick order buttons
+    reverseOrderBtn.disabled = true;
+    shuffleOrderBtn.disabled = true;
+});
+</script>
+{% endblock %}
